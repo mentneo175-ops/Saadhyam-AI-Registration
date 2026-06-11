@@ -1,0 +1,22 @@
+{
+  "name": "saadhyam-registration",
+  "version": "1.0.0",
+  "description": "Event registration with virtual ID and QR code",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "setup:firebase": "node scripts/setup-firebase.js",
+    "open:edge": "start msedge http://localhost:3000",
+    "download-fonts": "node scripts/download-font.js"
+  },
+  "dependencies": {
+    "cloudinary": "2.10.0",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "firebase-admin": "^13.0.2",
+    "multer": "^1.4.5-lts.1",
+    "pdfkit": "^0.15.1",
+    "selfsigned": "2.4.1"
+  }
+}

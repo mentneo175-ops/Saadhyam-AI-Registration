@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Event Registration — Saadhyam AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="page-bg">
+    <div class="glow glow-1"></div>
+    <div class="glow glow-2"></div>
+  </div>
+
+  <!-- QR Scanner (top-right) -->
+  <button type="button" id="scanner-toggle" class="scanner-fab" aria-label="Open QR scanner">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+      <path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2" stroke-linecap="round"/>
+      <rect x="7" y="7" width="10" height="10" rx="1"/>
+    </svg>
+    <span>Scan QR</span>
+  </button>
+
+  <div id="scanner-modal" class="scanner-modal hidden" role="dialog" aria-modal="true" aria-label="QR Code Scanner">
+    <div class="scanner-backdrop" id="scanner-backdrop"></div>
+    <div class="scanner-panel">
+      <div class="scanner-panel-header">
+        <h3>Scan Participant QR</h3>
+        <button type="button" id="scanner-close" class="scanner-close" aria-label="Close scanner">&times;</button>
+      </div>
+      <div id="qr-reader" class="qr-reader"></div>
+      <p class="scanner-hint">Point camera at a participant's event QR code</p>
+      <div id="scan-result" class="scan-result hidden"></div>
+    </div>
+  </div>
+
+  <main class="container">
+    <!-- Registration Form -->
+    <section id="form-section" class="form-section">
+      <header class="form-header">
+        <div class="logo-round">
+          <img src="assets/logo.png" alt="Saadhyam AI" class="brand-logo" />
+        </div>
+        <h1>Event Registration</h1>
+        <p class="subtitle">Register now and receive your virtual event ID instantly.</p>
+      </header>
+
+      <form id="registration-form" class="registration-form" novalidate>
+        <div class="form-grid">
+          <div class="form-group full-width">
+            <label for="fullName">Full Name <span class="required">*</span></label>
+            <input type="text" id="fullName" name="fullName" placeholder="Enter your full name" required />
+            <span class="error-msg" data-for="fullName"></span>
+          </div>
+
+          <div class="form-group">
+            <label for="mobile">Mobile Number <span class="required">*</span></label>
+            <input type="tel" id="mobile" name="mobile" placeholder="10-digit mobile number" required />
+            <span class="error-msg" data-for="mobile"></span>
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email Address <span class="required">*</span></label>
+            <input type="email" id="email" name="email" placeholder="you@example.com" required />
+            <span class="error-msg" data-for="email"></span>
+          </div>
+
+          <div class="form-group">
+            <label for="college">College Name <span class="required">*</span></label>
+            <input type="text" id="college" name="college" placeholder="Your college / university" required />
+            <span class="error-msg" data-for="college"></span>
+          </div>
+
+          <div class="form-group">
+            <label for="branch">Branch <span class="required">*</span></label>
+            <input type="text" id="branch" name="branch" placeholder="e.g. Computer Science" required />
+            <span class="error-msg" data-for="branch"></span>
+          </div>
+
+          <div class="form-group">
+            <label for="year">Year of Study <span class="required">*</span></label>
+            <select id="year" name="year" required>
+              <option value="" disabled selected>Select year</option>
+              <option value="1st Year">1st Year</option>
+              <option value="2nd Year">2nd Year</option>
+              <option value="3rd Year">3rd Year</option>
+              <option value="4th Year">4th Year</option>
+              <option value="5th Year">5th Year</option>
+              <option value="Post Graduate">Post Graduate</option>
+            </select>
+            <span class="error-msg" data-for="year"></span>
+          </div>
+
+          <div class="form-group">
+            <label for="gender">Gender <span class="required">*</span></label>
+            <select id="gender" name="gender" required>
+              <option value="" disabled selected>Select gender</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+              <option value="Prefer not to say">Prefer not to say</option>
+            </select>
+            <span class="error-msg" data-for="gender"></span>
+          </div>
+
+          <div class="form-group">
+            <label for="city">City <span class="required">*</span></label>
+            <input type="text" id="city" name="city" placeholder="Your city" required />
+            <span class="error-msg" data-for="city"></span>
+          </div>
+
+          <div class="form-group">
+            <label for="state">State <span class="required">*</span></label>
+            <input type="text" id="state" name="state" placeholder="Your state" required />
+            <span class="error-msg" data-for="state"></span>
+          </div>
+
+          <div class="form-group full-width">
+            <label for="linkedin">LinkedIn Profile</label>
+            <input type="url" id="linkedin" name="linkedin" placeholder="https://linkedin.com/in/yourprofile" />
+            <span class="error-msg" data-for="linkedin"></span>
+          </div>
+
+          <div class="form-group full-width">
+            <label for="photo">Photo Upload <span class="required">*</span></label>
+            <div class="photo-upload" id="photo-upload-area">
+              <input type="file" id="photo" name="photo" accept="image/jpeg,image/png,image/webp" required />
+              <div class="photo-upload-content" id="photo-preview-area">
+                <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M12 16V4m0 0l-4 4m4-4l4 4M4 20h16" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span class="upload-text">Click or drag & drop your photo</span>
+                <span class="upload-hint">JPG, PNG or WebP · Max 5 MB</span>
+              </div>
+              <img id="photo-preview" class="photo-preview-img hidden" alt="Photo preview" />
+            </div>
+            <span class="error-msg" data-for="photo"></span>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-submit" id="submit-btn">
+          <span class="btn-text">Complete Registration</span>
+          <span class="btn-loader hidden">
+            <svg class="spinner" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg>
+            Processing…
+          </span>
+        </button>
+      </form>
+    </section>
+
+    <!-- Virtual ID Card -->
+    <section id="id-section" class="id-section hidden">
+      <div class="success-banner">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div>
+          <strong>Registration Successful!</strong>
+          <p>Your virtual ID is ready — tap the card to reveal your QR code.</p>
+          <p class="success-extra">Your participation certificate will be generated and stored within 48 hours.</p>
+        </div>
+      </div>
+
+      <p class="card-hint" id="card-hint">
+        <span class="hint-icon">↻</span>
+        Tap card to flip · <span id="card-side-label">Virtual ID</span> showing
+      </p>
+
+      <div class="id-card-wrapper">
+        <div id="card-flip" class="card-flip" role="button" tabindex="0" aria-label="Flip virtual ID card to show QR code">
+          <div class="flip-glow"></div>
+          <div id="virtual-id-card" class="card-flip-inner">
+            <!-- Front: Virtual ID -->
+            <div class="card-face card-front">
+              <div class="virtual-id-card">
+                <div class="id-card-glow"></div>
+                <div class="id-card-inner">
+                  <div class="id-card-header">
+                    <div class="id-header-brand">
+                      <div class="logo-round logo-round-sm">
+                        <img src="assets/logo.png" alt="Saadhyam AI" class="id-logo" />
+                      </div>
+                      <p class="id-tagline">TURN POSSIBILITIES INTO GROWTH</p>
+                    </div>
+                    <div class="id-badge">
+                      <span class="badge-dot"></span>
+                      VERIFIED
+                    </div>
+                  </div>
+
+                  <div class="id-card-body">
+                    <div class="id-photo-frame">
+                      <img id="id-photo" src="" alt="Participant photo" />
+                      <div class="photo-ring"></div>
+                    </div>
+
+                    <div class="id-details">
+                      <h2 id="id-name">—</h2>
+                      <p class="id-role">Event Participant</p>
+
+                      <div class="id-info-grid">
+                        <div class="id-info-item">
+                          <span class="id-label">College</span>
+                          <span class="id-value" id="id-college">—</span>
+                        </div>
+                        <div class="id-info-item">
+                          <span class="id-label">Branch</span>
+                          <span class="id-value" id="id-branch">—</span>
+                        </div>
+                        <div class="id-info-item">
+                          <span class="id-label">Year</span>
+                          <span class="id-value" id="id-year">—</span>
+                        </div>
+                        <div class="id-info-item">
+                          <span class="id-label">Gender</span>
+                          <span class="id-value" id="id-gender">—</span>
+                        </div>
+                        <div class="id-info-item">
+                          <span class="id-label">Location</span>
+                          <span class="id-value" id="id-location">—</span>
+                        </div>
+                        <div class="id-info-item">
+                          <span class="id-label">LinkedIn</span>
+                          <span class="id-value" id="id-linkedin">—</span>
+                        </div>
+                      </div>
+
+                      <div class="id-contact">
+                        <span id="id-email">—</span>
+                        <span class="id-divider">·</span>
+                        <span id="id-mobile">—</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="id-card-footer">
+                    <div class="id-reg-id">
+                      <span class="id-label">Registration ID</span>
+                      <span class="id-reg-number" id="id-reg-number">—</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Back: QR Code -->
+            <div class="card-face card-back">
+              <div class="virtual-id-card">
+                <div class="id-card-glow"></div>
+                <div class="id-card-inner qr-card-inner">
+                  <div class="qr-header">
+                    <div class="logo-round logo-round-sm">
+                      <img src="assets/logo.png" alt="Saadhyam AI" class="id-logo" />
+                    </div>
+                    <div>
+                      <h3>Scan to Verify</h3>
+                      <p id="qr-reg-id">—</p>
+                    </div>
+                  </div>
+
+                  <div class="qr-body">
+                    <div class="qr-code-wrap">
+                      <div class="qr-scan-line"></div>
+                      <div id="qr-code"></div>
+                    </div>
+                    <div class="qr-details">
+                      <p class="qr-name" id="qr-name">—</p>
+                      <p class="qr-meta" id="qr-college">—</p>
+                      <p class="qr-meta" id="qr-branch-year">—</p>
+                      <p class="qr-meta" id="qr-contact">—</p>
+                      <p class="qr-meta" id="qr-location">—</p>
+                    </div>
+                  </div>
+
+                  <p class="qr-footer">TURN POSSIBILITIES INTO GROWTH</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="id-actions">
+        <a id="linkedin-share-btn" href="#" target="_blank" rel="noopener noreferrer" class="btn-linkedin">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+            <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+          </svg>
+          Share on LinkedIn
+        </a>
+        <button type="button" class="btn-secondary" id="new-registration-btn">
+          Register Another Person
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="page-footer">
+    <p>© 2026 Saadhyam AI · TURN POSSIBILITIES INTO GROWTH</p>
+  </footer>
+
+  <!-- Post-registration overlay — Join Community only -->
+  <div id="action-overlay" class="action-overlay hidden" role="dialog" aria-modal="true">
+    <div class="action-overlay-backdrop"></div>
+    <div class="action-overlay-content">
+      <div class="action-overlay-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48">
+          <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h2 class="action-overlay-title">You're Registered!</h2>
+      <p class="action-overlay-sub">Join our WhatsApp community to stay connected</p>
+      <div class="action-overlay-btns">
+        <a id="overlay-community-btn" href="https://chat.whatsapp.com/DQ9uYbfwoeP14Wqf2FQYyr"
+           target="_blank" rel="noopener noreferrer" class="action-btn action-btn-community"
+           onclick="document.getElementById('action-overlay').classList.add('hidden')">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+            <path d="M12 0C5.373 0 0 5.373 0 12c0 2.105.546 4.082 1.5 5.797L0 24l6.335-1.463A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.003-1.371l-.358-.214-3.76.868.934-3.653-.234-.374A9.818 9.818 0 1112 21.818z"/>
+          </svg>
+          Join WhatsApp Community
+        </a>
+      </div>
+      <button id="overlay-dismiss-btn" class="action-overlay-dismiss">View my Virtual ID →</button>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/firebase-client.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="js/scanner.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

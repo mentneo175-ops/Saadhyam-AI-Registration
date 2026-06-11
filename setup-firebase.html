@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Firebase Setup — Saadhyam AI</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Inter, sans-serif; background: #0b0b14; color: #fff; min-height: 100vh; padding: 40px 24px; }
+    .wrap { max-width: 640px; margin: 0 auto; }
+    h1 { font-size: 1.5rem; margin-bottom: 8px; }
+    .sub { color: #9ca3af; margin-bottom: 32px; font-size: 0.95rem; }
+    .status { padding: 20px; border-radius: 12px; margin-bottom: 16px; border: 1px solid rgba(139,92,246,0.2); }
+    .status.loading { background: #12121f; }
+    .status.ok { background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.3); }
+    .status.err { background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.3); }
+    .status h2 { font-size: 1rem; margin-bottom: 6px; }
+    .status p { font-size: 0.88rem; color: #9ca3af; line-height: 1.6; }
+    ol { padding-left: 20px; color: #d1d5db; line-height: 2; font-size: 0.9rem; }
+    code { background: #1a1a2e; padding: 2px 8px; border-radius: 4px; color: #a78bfa; font-size: 0.85rem; }
+    .btn { display: inline-block; margin-top: 24px; padding: 12px 24px; background: linear-gradient(135deg,#6200ea,#8b5cf6); color: #fff; text-decoration: none; border-radius: 999px; font-weight: 600; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Firebase Connection</h1>
+    <p class="sub">Project: <strong>saadhyam-registration-form</strong></p>
+
+    <div id="client-status" class="status loading">
+      <h2>Testing client connection…</h2>
+    </div>
+    <div id="server-status" class="status loading">
+      <h2>Testing server connection…</h2>
+    </div>
+
+    <ol>
+      <li>Firebase Console → <strong>Firestore Database</strong> → Create database</li>
+      <li>Firebase Console → <strong>Storage</strong> → Get started</li>
+      <li>Deploy rules from <code>firestore.rules</code> and <code>storage.rules</code> in Firebase Console</li>
+      <li>Optional: add service account for server-side certificates via <code>npm run setup:firebase</code></li>
+    </ol>
+
+    <a href="/" class="btn">Go to Registration</a>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/firebase-client.js"></script>
+  <script>
+    SaadhyamFirebase.testConnection()
+      .then((s) => {
+        document.getElementById('client-status').className = 'status ok';
+        document.getElementById('client-status').innerHTML =
+          `<h2>✓ Firebase Client Connected</h2>
+           <p>Project: <strong>${s.projectId}</strong><br>
+           Collection: ${s.collection}<br>Storage: ${s.storageBucket}</p>`;
+      })
+      .catch((e) => {
+        document.getElementById('client-status').className = 'status err';
+        document.getElementById('client-status').innerHTML =
+          `<h2>Client connection failed</h2><p>${e.message}<br>Enable Firestore & Storage in Firebase Console.</p>`;
+      });
+
+    fetch('/api/firebase/status')
+      .then(r => r.json())
+      .then(data => {
+        const el = document.getElementById('server-status');
+        if (data.adminConfigured) {
+          el.className = 'status ok';
+          el.innerHTML = `<h2>✓ Firebase Admin Connected</h2><p>Server-side certificates & WhatsApp enabled.</p>`;
+        } else {
+          el.className = 'status ok';
+          el.innerHTML = `<h2>✓ Client SDK mode</h2><p>Registrations save via browser. Add service account for server certificates (optional).</p>`;
+        }
+      })
+      .catch(() => {
+        document.getElementById('server-status').className = 'status err';
+        document.getElementById('server-status').innerHTML = '<h2>Server offline</h2><p>Run npm start</p>';
+      });
+  </script>
+</body>
+</html>

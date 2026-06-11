@@ -211,68 +211,31 @@
       bctx.lineTo(cardW - 20 * scale, headerH);
       bctx.stroke();
 
-      // Generate QR using qrcode-generator (pure canvas, no DOM, works on mobile)
+      // Generate QR server-side — guaranteed to work on all devices
       const qrSize = Math.min(cardW, cardH - headerH - 80 * scale) - 40 * scale;
       const qrX    = (cardW - qrSize) / 2;
       const qrY    = headerH + 20 * scale;
 
-      // Try every possible reference to qrcode-generator
-      const qrGen = window._qrGen ||
-                    (typeof qrcode === 'function' ? qrcode : null) ||
-                    (window.qrcode && typeof window.qrcode === 'function' ? window.qrcode : null);
-
-      if (regId && qrGen) {
+      if (regId && regId !== '…') {
         try {
-          const qr = qrGen(0, 'L');
-          qr.addData(regId);
-          qr.make();
-          const mods = qr.getModuleCount();
-          const cell = Math.floor(qrSize / mods);
-          const qrActual = cell * mods;
-          const qrOffX = qrX + (qrSize - qrActual) / 2;
-          const qrOffY = qrY;
+          const qrRes  = await fetch(`/api/qr/${encodeURIComponent(regId)}`);
+          const qrData = await qrRes.json();
 
-          // White background
-          const pad = 8 * scale;
-          bctx.fillStyle = '#ffffff';
-          bctx.fillRect(qrOffX - pad, qrOffY - pad, qrActual + pad * 2, qrActual + pad * 2);
+          if (qrData.ok && qrData.dataUrl) {
+            const qrImg = await new Promise((res, rej) => {
+              const img = new Image();
+              img.onload  = () => res(img);
+              img.onerror = rej;
+              img.src = qrData.dataUrl;
+            });
 
-          // Draw QR modules
-          for (let row = 0; row < mods; row++) {
-            for (let col = 0; col < mods; col++) {
-              bctx.fillStyle = qr.isDark(row, col) ? '#0f0f1a' : '#ffffff';
-              bctx.fillRect(qrOffX + col * cell, qrOffY + row * cell, cell, cell);
-            }
+            const pad = 8 * scale;
+            bctx.fillStyle = '#ffffff';
+            bctx.fillRect(qrX - pad, qrY - pad, qrSize + pad * 2, qrSize + pad * 2);
+            bctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
           }
-        } catch(qrErr) {
-          // Fallback: use QRCode (qrcodejs) via img element
-          console.warn('[QR] qrcode-generator failed, trying QRCode img fallback:', qrErr);
-          await new Promise((res) => {
-            const tmp = document.createElement('div');
-            tmp.style.cssText = 'position:fixed;top:0;left:0;opacity:0.01;z-index:9999;';
-            const sz = Math.round(qrSize);
-            document.body.appendChild(tmp);
-            new QRCode(tmp, { text: regId, width: sz, height: sz,
-              colorDark: '#0f0f1a', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.L });
-            setTimeout(() => {
-              const img = tmp.querySelector('img');
-              const cvs = tmp.querySelector('canvas');
-              const src = cvs ? cvs.toDataURL() : (img ? img.src : null);
-              if (src) {
-                const qi = new Image();
-                qi.onload = () => {
-                  const pad = 8 * scale;
-                  bctx.fillStyle = '#ffffff';
-                  bctx.fillRect(qrX - pad, qrY - pad, qrSize + pad*2, qrSize + pad*2);
-                  bctx.drawImage(qi, qrX, qrY, qrSize, qrSize);
-                  document.body.removeChild(tmp);
-                  res();
-                };
-                qi.onerror = () => { document.body.removeChild(tmp); res(); };
-                qi.src = src;
-              } else { document.body.removeChild(tmp); res(); }
-            }, 600);
-          });
+        } catch (qrErr) {
+          console.error('[QR Server]', qrErr);
         }
       }
 

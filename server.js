@@ -192,7 +192,21 @@ app.post('/api/generate-certificate', async (req, res) => {
   }
 });
 
-// ── GET /api/firebase/status ──────────────────────────────────────────────────
+// ── GET /api/qr/:regId — returns QR code as PNG data URL ─────────────────────
+app.get('/api/qr/:regId', async (req, res) => {
+  try {
+    const QRCode = require('qrcode');
+    const dataUrl = await QRCode.toDataURL(req.params.regId, {
+      width: 300,
+      margin: 1,
+      color: { dark: '#0f0f1a', light: '#ffffff' },
+      errorCorrectionLevel: 'L',
+    });
+    res.json({ ok: true, dataUrl });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
 app.get('/api/firebase/status', async (_req, res) => {
   const clientConfig = {
     projectId:       process.env.FIREBASE_PROJECT_ID,

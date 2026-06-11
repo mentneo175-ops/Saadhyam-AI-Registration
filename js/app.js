@@ -139,41 +139,118 @@
       const wasFlipped = cardFlipEl.classList.contains('flipped');
       cardFlipEl.classList.remove('flipped', 'flipping');
 
-      // ── Capture front face normally ──────────────────────────────────────────
+      // ── Capture front face ────────────────────────────────────────────────────
       const frontEl     = document.querySelector('.card-front .virtual-id-card');
       const frontCanvas = await html2canvas(frontEl, {
         scale, backgroundColor: '#0b0b14', useCORS: true, logging: false,
       });
 
-      // ── Capture back face via a clean clone (no 3D transform context) ────────
-      const backEl    = document.querySelector('.card-back .virtual-id-card');
-      const backClone = backEl.cloneNode(true);
-
-      const host = document.createElement('div');
-      host.style.cssText = [
-        'position:fixed', 'top:0', 'left:0',
-        `width:${frontEl.offsetWidth}px`,
-        'z-index:9999', 'opacity:0.01', 'pointer-events:none',
-        'transform:none', 'perspective:none',
-      ].join(';');
-
-      backClone.style.cssText = 'transform:none;backface-visibility:visible;position:relative;opacity:1;';
-      host.appendChild(backClone);
-      document.body.appendChild(host);
-
-      await new Promise((r) => setTimeout(r, 150));
-
-      const backCanvas = await html2canvas(backClone, {
-        scale, backgroundColor: '#0b0b14', useCORS: true, logging: false,
-      });
-
-      document.body.removeChild(host);
       if (wasFlipped) cardFlipEl.classList.add('flipped');
 
+      // ── Build QR back card entirely from scratch (no html2canvas clone) ───────
+      // This avoids mobile canvas rendering issues with cloned hidden elements.
+      const regId   = (document.getElementById('id-reg-number').textContent || '').trim();
+      const cardW   = frontCanvas.width;
+      const cardH   = frontCanvas.height;
+      const backOut = document.createElement('canvas');
+      backOut.width  = cardW;
+      backOut.height = cardH;
+      const bctx = backOut.getContext('2d');
+
+      // Background
+      bctx.fillStyle = '#0b0b14';
+      bctx.fillRect(0, 0, cardW, cardH);
+
+      // Purple gradient border
+      const grad = bctx.createLinearGradient(0, 0, cardW, cardH);
+      grad.addColorStop(0,   '#6200ea');
+      grad.addColorStop(0.5, '#8b5cf6');
+      grad.addColorStop(1,   '#d500f9');
+      bctx.strokeStyle = grad;
+      bctx.lineWidth   = 4;
+      const r = 20 * scale;
+      bctx.beginPath();
+      bctx.roundRect(2, 2, cardW - 4, cardH - 4, r);
+      bctx.stroke();
+
+      // Inner card background
+      bctx.fillStyle = 'linear-gradient(160deg,#0f0f1a,#12121f,#1a1030)';
+      bctx.fillStyle = '#10101e';
+      bctx.beginPath();
+      bctx.roundRect(4, 4, cardW - 8, cardH - 8, r - 2);
+      bctx.fill();
+
+      // Header: logo + "Scan to Verify" text
+      const headerH = 80 * scale;
+      const logoR   = 22 * scale;
+      const logoX   = 32 * scale;
+      const logoY   = (headerH - logoR * 2) / 2;
+
+      // Logo circle background
+      bctx.beginPath();
+      bctx.arc(logoX + logoR, logoY + logoR, logoR, 0, Math.PI * 2);
+      bctx.strokeStyle = '#8b5cf6';
+      bctx.lineWidth   = 2;
+      bctx.stroke();
+
+      // "Scan to Verify" text
+      bctx.fillStyle = '#ffffff';
+      bctx.font      = `bold ${14 * scale}px Inter, Arial, sans-serif`;
+      bctx.fillText('Scan to Verify', logoX + logoR * 2 + 14 * scale, logoY + logoR + 2 * scale);
+
+      // Reg ID below
+      bctx.fillStyle = '#a78bfa';
+      bctx.font      = `${11 * scale}px 'Courier New', monospace`;
+      bctx.fillText(regId, logoX + logoR * 2 + 14 * scale, logoY + logoR + 18 * scale);
+
+      // Divider line
+      bctx.strokeStyle = 'rgba(139,92,246,0.2)';
+      bctx.lineWidth   = 1;
+      bctx.beginPath();
+      bctx.moveTo(20 * scale, headerH);
+      bctx.lineTo(cardW - 20 * scale, headerH);
+      bctx.stroke();
+
+      // Generate QR using qrcode-generator (pure canvas, no DOM, works on mobile)
+      const qrSize = Math.min(cardW, cardH - headerH - 80 * scale) - 40 * scale;
+      const qrX    = (cardW - qrSize) / 2;
+      const qrY    = headerH + 20 * scale;
+
+      if (regId && typeof qrcode !== 'undefined') {
+        const qr = qrcode(0, 'L');
+        qr.addData(regId);
+        qr.make();
+        const mods = qr.getModuleCount();
+        const cell = Math.floor(qrSize / mods);
+        const qrActual = cell * mods;
+        const qrOffX = qrX + (qrSize - qrActual) / 2;
+        const qrOffY = qrY;
+
+        // White background
+        const pad = 8 * scale;
+        bctx.fillStyle = '#ffffff';
+        bctx.fillRect(qrOffX - pad, qrOffY - pad, qrActual + pad * 2, qrActual + pad * 2);
+
+        // Draw QR modules
+        for (let row = 0; row < mods; row++) {
+          for (let col = 0; col < mods; col++) {
+            bctx.fillStyle = qr.isDark(row, col) ? '#0f0f1a' : '#ffffff';
+            bctx.fillRect(qrOffX + col * cell, qrOffY + row * cell, cell, cell);
+          }
+        }
+      }
+
+      // Footer tagline
+      bctx.fillStyle  = 'rgba(156,163,175,0.6)';
+      bctx.font       = `${9 * scale}px Inter, Arial, sans-serif`;
+      bctx.textAlign  = 'center';
+      bctx.fillText('TURN POSSIBILITIES INTO GROWTH', cardW / 2, cardH - 16 * scale);
+      bctx.textAlign  = 'left';
+
       // ── Stitch front + back vertically ───────────────────────────────────────
-      const gap = 16 * scale;
-      const w   = Math.max(frontCanvas.width, backCanvas.width);
-      const h   = frontCanvas.height + gap + backCanvas.height;
+      const gap = 12 * scale;
+      const w   = cardW;
+      const h   = cardH * 2 + gap;
       const out = document.createElement('canvas');
       out.width  = w;
       out.height = h;
@@ -181,7 +258,7 @@
       ctx.fillStyle = '#0b0b14';
       ctx.fillRect(0, 0, w, h);
       ctx.drawImage(frontCanvas, 0, 0);
-      ctx.drawImage(backCanvas,  0, frontCanvas.height + gap);
+      ctx.drawImage(backOut,     0, cardH + gap);
 
       const dataUrl  = out.toDataURL('image/png');
       const safeName = `Saadhyam_AI_ID_${(name || 'participant').replace(/\s+/g, '_')}.png`;
@@ -190,45 +267,27 @@
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
       if (isMobile) {
-        // On mobile browsers, link.click() is blocked for async downloads.
-        // Open the image in a new tab — user can long-press → Save Image.
         const newTab = window.open();
         if (newTab) {
-          newTab.document.write(`
-            <!DOCTYPE html>
-            <html>
-            <head>
-              <meta charset="utf-8">
-              <meta name="viewport" content="width=device-width,initial-scale=1">
-              <title>Your Virtual ID</title>
-              <style>
-                body { margin:0; background:#0b0b14; display:flex; flex-direction:column;
-                       align-items:center; justify-content:center; min-height:100vh; }
-                img  { max-width:100%; border-radius:12px; }
-                p    { color:#9ca3af; font-family:sans-serif; font-size:0.85rem;
-                       text-align:center; margin-top:16px; padding:0 24px; }
-              </style>
-            </head>
-            <body>
-              <img src="${dataUrl}" alt="Saadhyam AI ID Card">
-              <p>Long press the image and tap <strong>Save Image</strong> to download</p>
-            </body>
-            </html>
-          `);
+          newTab.document.write(`<!DOCTYPE html><html><head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width,initial-scale=1">
+            <title>Your Virtual ID</title>
+            <style>body{margin:0;background:#0b0b14;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;}img{max-width:100%;border-radius:12px;}p{color:#9ca3af;font-family:sans-serif;font-size:0.85rem;text-align:center;margin-top:16px;padding:0 24px;}</style>
+            </head><body>
+            <img src="${dataUrl}" alt="Saadhyam AI ID Card">
+            <p>Long press the image and tap <strong>Save Image</strong> to download</p>
+            </body></html>`);
           newTab.document.close();
         } else {
-          // Popup blocked — fallback to blob URL
           const blob = await (await fetch(dataUrl)).blob();
           const url  = URL.createObjectURL(blob);
           const a    = document.createElement('a');
-          a.href     = url;
-          a.download = safeName;
-          document.body.appendChild(a);
-          a.click();
+          a.href = url; a.download = safeName;
+          document.body.appendChild(a); a.click();
           setTimeout(() => { URL.revokeObjectURL(url); document.body.removeChild(a); }, 1000);
         }
       } else {
-        // Desktop — standard download
         const link    = document.createElement('a');
         link.download = safeName;
         link.href     = dataUrl;
@@ -242,6 +301,7 @@
     }
   }
 
+      // ── Stitch front + back vertically ───────────────────────────────────────
   // ── Show / hide ─────────────────────────────────────────────────────────────
   function showIdSection() {
     formSection.classList.add('hidden');

@@ -216,8 +216,12 @@
       const qrX    = (cardW - qrSize) / 2;
       const qrY    = headerH + 20 * scale;
 
-      if (regId && typeof qrcode !== 'undefined') {
-        const qr = qrcode(0, 'L');
+      // qrcode-generator exports as window.qrcode (lowercase)
+      // Save reference before qrcodejs can overwrite it
+      const qrGen = window._qrGen || window.qrcode;
+
+      if (regId && typeof qrGen === 'function') {
+        const qr = qrGen(0, 'L');
         qr.addData(regId);
         qr.make();
         const mods = qr.getModuleCount();

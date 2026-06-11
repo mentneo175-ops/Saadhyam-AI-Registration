@@ -183,10 +183,59 @@
       ctx.drawImage(frontCanvas, 0, 0);
       ctx.drawImage(backCanvas,  0, frontCanvas.height + gap);
 
-      const link     = document.createElement('a');
-      link.download  = `Saadhyam_AI_ID_${(name || 'participant').replace(/\s+/g, '_')}.png`;
-      link.href      = out.toDataURL('image/png');
-      link.click();
+      const dataUrl  = out.toDataURL('image/png');
+      const safeName = `Saadhyam_AI_ID_${(name || 'participant').replace(/\s+/g, '_')}.png`;
+
+      // ── Mobile-safe download ──────────────────────────────────────────────────
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+      if (isMobile) {
+        // On mobile browsers, link.click() is blocked for async downloads.
+        // Open the image in a new tab — user can long-press → Save Image.
+        const newTab = window.open();
+        if (newTab) {
+          newTab.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width,initial-scale=1">
+              <title>Your Virtual ID</title>
+              <style>
+                body { margin:0; background:#0b0b14; display:flex; flex-direction:column;
+                       align-items:center; justify-content:center; min-height:100vh; }
+                img  { max-width:100%; border-radius:12px; }
+                p    { color:#9ca3af; font-family:sans-serif; font-size:0.85rem;
+                       text-align:center; margin-top:16px; padding:0 24px; }
+              </style>
+            </head>
+            <body>
+              <img src="${dataUrl}" alt="Saadhyam AI ID Card">
+              <p>Long press the image and tap <strong>Save Image</strong> to download</p>
+            </body>
+            </html>
+          `);
+          newTab.document.close();
+        } else {
+          // Popup blocked — fallback to blob URL
+          const blob = await (await fetch(dataUrl)).blob();
+          const url  = URL.createObjectURL(blob);
+          const a    = document.createElement('a');
+          a.href     = url;
+          a.download = safeName;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => { URL.revokeObjectURL(url); document.body.removeChild(a); }, 1000);
+        }
+      } else {
+        // Desktop — standard download
+        const link    = document.createElement('a');
+        link.download = safeName;
+        link.href     = dataUrl;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
 
     } catch (err) {
       console.error('[Download]', err);

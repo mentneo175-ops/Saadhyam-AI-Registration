@@ -153,7 +153,7 @@
       host.style.cssText = [
         'position:fixed', 'top:0', 'left:0',
         `width:${frontEl.offsetWidth}px`,
-        'z-index:-1', 'opacity:0.01', 'pointer-events:none',
+        'z-index:9999', 'opacity:0.01', 'pointer-events:none',
         'transform:none', 'perspective:none',
       ].join(';');
 
@@ -210,21 +210,22 @@
 
     const eventName = 'Saadhyam AI Event';
     const text = [
-      `🎉 Excited to share that I have successfully registered for ${eventName} by Saadhyam AI!`,
+      `🎉 I am thrilled to share that I have successfully registered for the ${eventName} powered by Saadhyam AI!`,
       ``,
-      `It's a great opportunity to connect with like-minded individuals, explore AI advancements, and grow together.`,
+      `This is a remarkable opportunity to connect with AI enthusiasts, industry leaders, and fellow learners who are passionate about turning possibilities into growth.`,
       ``,
       `📌 Event: ${eventName}`,
-      `🏫 College: ${registration.college}`,
-      `🔬 Branch: ${registration.branch}`,
+      `🏫 College: ${registration.college || ''}`,
+      `🔬 Branch: ${registration.branch || ''}`,
       ``,
-      `A big thanks to Saadhyam AI and Ment Neo for organising this incredible event. Looking forward to an amazing experience! 🚀`,
+      `A heartfelt thank you to Saadhyam AI and our certified partner Ment Neo for making this event possible. I look forward to the learning, networking, and growth that lies ahead! 🚀`,
       ``,
-      `#SaadhyamAI #AI #EventRegistration #MentNeo #TurnPossibilitiesIntoGrowth #Learning #Technology`,
+      `#SaadhyamAI #AI #ArtificialIntelligence #EventRegistration #MentNeo #TurnPossibilitiesIntoGrowth #Learning #Technology #Innovation`,
     ].join('\n');
 
+    // LinkedIn feed share URL — opens post composer with pre-filled text
     const encoded = encodeURIComponent(text);
-    btn.href = `https://www.linkedin.com/shareArticle?mini=true&summary=${encoded}`;
+    btn.href = `https://www.linkedin.com/feed/?shareActive=true&text=${encoded}`;
   }
 
   function dismissOverlay() { actionOverlay.classList.add('hidden'); }

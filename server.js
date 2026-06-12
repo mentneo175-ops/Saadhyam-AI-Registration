@@ -136,6 +136,29 @@ async function generateAndStoreCertificate(registration) {
 }
 
 app.use(express.json());
+
+// ── GET /js/firebase-config.js — serve config from env vars (never hardcoded) ─
+// MUST be before express.static so the dynamic route takes priority
+app.get('/js/firebase-config.js', (_req, res) => {
+  res.set('Content-Type', 'application/javascript');
+  res.send(`
+// Saadhyam AI — Firebase Web SDK configuration (injected from server env)
+const firebaseConfig = {
+  apiKey:            ${JSON.stringify(process.env.FIREBASE_API_KEY             || '')},
+  authDomain:        ${JSON.stringify(process.env.FIREBASE_AUTH_DOMAIN         || '')},
+  projectId:         ${JSON.stringify(process.env.FIREBASE_PROJECT_ID          || '')},
+  storageBucket:     ${JSON.stringify(process.env.FIREBASE_STORAGE_BUCKET      || '')},
+  messagingSenderId: ${JSON.stringify(process.env.FIREBASE_MESSAGING_SENDER_ID || '')},
+  appId:             ${JSON.stringify(process.env.FIREBASE_APP_ID              || '')},
+  measurementId:     ${JSON.stringify(process.env.FIREBASE_MEASUREMENT_ID      || '')},
+};
+
+const SAADHYAM_CONFIG = {
+  communityLink: ${JSON.stringify(process.env.COMMUNITY_LINK || '')},
+};
+`.trim());
+});
+
 app.use(express.static(__dirname));
 app.use('/uploads', express.static(UPLOADS_DIR));
 
@@ -190,27 +213,6 @@ app.post('/api/generate-certificate', async (req, res) => {
     console.error('[Certificate API] Error:', err.message);
     res.status(500).json({ error: 'Certificate generation failed.' });
   }
-});
-
-// ── GET /js/firebase-config.js — serve config from env vars (never hardcoded) ─
-app.get('/js/firebase-config.js', (_req, res) => {
-  res.set('Content-Type', 'application/javascript');
-  res.send(`
-// Saadhyam AI — Firebase Web SDK configuration (injected from server env)
-const firebaseConfig = {
-  apiKey:            ${JSON.stringify(process.env.FIREBASE_API_KEY            || '')},
-  authDomain:        ${JSON.stringify(process.env.FIREBASE_AUTH_DOMAIN        || '')},
-  projectId:         ${JSON.stringify(process.env.FIREBASE_PROJECT_ID         || '')},
-  storageBucket:     ${JSON.stringify(process.env.FIREBASE_STORAGE_BUCKET     || '')},
-  messagingSenderId: ${JSON.stringify(process.env.FIREBASE_MESSAGING_SENDER_ID|| '')},
-  appId:             ${JSON.stringify(process.env.FIREBASE_APP_ID             || '')},
-  measurementId:     ${JSON.stringify(process.env.FIREBASE_MEASUREMENT_ID     || '')},
-};
-
-const SAADHYAM_CONFIG = {
-  communityLink: ${JSON.stringify(process.env.COMMUNITY_LINK || '')},
-};
-`.trim());
 });
 
 // ── POST /api/download-card — receives PNG data, returns as file download ──────

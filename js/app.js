@@ -260,39 +260,45 @@
       ctx.drawImage(backOut,     0, cardH + gap);
 
       const dataUrl  = out.toDataURL('image/png');
-      const safeName = `Saadhyam_AI_ID_${(name || 'participant').replace(/\s+/g, '_')}.png`;
+      const safeName = `Saadhyam_AI_ID_${(name || 'participant').replace(/\s+/g, '_')}`;
 
-      // ── Mobile-safe download ──────────────────────────────────────────────────
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      // ── Universal download — works on all devices including mobile ────────────
+      // POST the data to the server which returns it as a proper file download.
+      // This bypasses all mobile browser restrictions on programmatic downloads.
+      try {
+        const res = await fetch('/api/download-card', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ dataUrl, filename: safeName }),
+        });
 
-      if (isMobile) {
-        const newTab = window.open();
-        if (newTab) {
-          newTab.document.write(`<!DOCTYPE html><html><head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width,initial-scale=1">
-            <title>Your Virtual ID</title>
-            <style>body{margin:0;background:#0b0b14;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;}img{max-width:100%;border-radius:12px;}p{color:#9ca3af;font-family:sans-serif;font-size:0.85rem;text-align:center;margin-top:16px;padding:0 24px;}</style>
-            </head><body>
-            <img src="${dataUrl}" alt="Saadhyam AI ID Card">
-            <p>Long press the image and tap <strong>Save Image</strong> to download</p>
-            </body></html>`);
-          newTab.document.close();
-        } else {
-          const blob = await (await fetch(dataUrl)).blob();
+        if (res.ok) {
+          const blob = await res.blob();
           const url  = URL.createObjectURL(blob);
           const a    = document.createElement('a');
-          a.href = url; a.download = safeName;
-          document.body.appendChild(a); a.click();
-          setTimeout(() => { URL.revokeObjectURL(url); document.body.removeChild(a); }, 1000);
+          a.href     = url;
+          a.download = safeName + '.png';
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => { URL.revokeObjectURL(url); document.body.removeChild(a); }, 2000);
+          return;
         }
-      } else {
-        const link    = document.createElement('a');
-        link.download = safeName;
-        link.href     = dataUrl;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+      } catch (fetchErr) {
+        console.warn('[Download] Server fetch failed, using fallback:', fetchErr.message);
+      }
+
+      // Fallback: blob URL (works on desktop, may not on some mobile browsers)
+      try {
+        const blob = await (await fetch(dataUrl)).blob();
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = url;
+        a.download = safeName + '.png';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => { URL.revokeObjectURL(url); document.body.removeChild(a); }, 2000);
+      } catch (blobErr) {
+        console.error('[Download] Blob fallback failed:', blobErr);
       }
 
     } catch (err) {
@@ -300,7 +306,6 @@
     }
   }
 
-      // ── Stitch front + back vertically ───────────────────────────────────────
   // ── Show / hide ─────────────────────────────────────────────────────────────
   function showIdSection() {
     formSection.classList.add('hidden');

@@ -192,7 +192,26 @@ app.post('/api/generate-certificate', async (req, res) => {
   }
 });
 
-// ── GET /api/qr/:regId — returns QR code as PNG data URL ─────────────────────
+// ── POST /api/download-card — receives PNG data, returns as file download ──────
+app.post('/api/download-card', express.json({ limit: '10mb' }), (req, res) => {
+  try {
+    const { dataUrl, filename } = req.body;
+    if (!dataUrl || !dataUrl.startsWith('data:image/png;base64,')) {
+      return res.status(400).json({ error: 'Invalid image data' });
+    }
+    const base64 = dataUrl.replace('data:image/png;base64,', '');
+    const buffer = Buffer.from(base64, 'base64');
+    const safe   = (filename || 'Saadhyam_AI_ID').replace(/[^a-zA-Z0-9_\-]/g, '_');
+    res.set({
+      'Content-Type':        'image/png',
+      'Content-Disposition': `attachment; filename="${safe}.png"`,
+      'Content-Length':      buffer.length,
+    });
+    res.send(buffer);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 app.get('/api/qr/:regId', async (req, res) => {
   try {
     const QRCode = require('qrcode');
